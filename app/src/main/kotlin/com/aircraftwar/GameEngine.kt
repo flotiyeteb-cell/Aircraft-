@@ -55,7 +55,8 @@ class GameEngine(
 
         // Spawn des ennemis
         spawnCounter++
-        if (spawnCounter > 100 - (level * 5) && enemies.size < waveEnemyCount + level) {
+        val spawnThreshold = (100 - (level * 5)).coerceAtLeast(30)
+        if (spawnCounter > spawnThreshold && enemies.size < waveEnemyCount + level) {
             spawnEnemy()
             spawnCounter = 0
         }
@@ -68,7 +69,17 @@ class GameEngine(
             // Collision avec le joueur
             if (enemy.collidesWith(player)) {
                 player.takeDamage(1)
-                enemy.takeDamage(100)
+                enemy.takeDamage(100f)
+            }
+
+            // Collision avec les balles
+            bullets.forEach { bullet ->
+                if (bullet.collidesWith(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, enemy.width / 2)) {
+                    enemy.takeDamage(bullet.damage)
+                    bullet.destroy()
+                    score += (10 * level)
+                    createParticles(bullet.x, bullet.y, 15, "#00ff00")
+                }
             }
         }
 
@@ -95,6 +106,11 @@ class GameEngine(
         if (player.health <= 0) {
             endGame()
         }
+
+        // Tir du joueur
+        if (player.fire()) {
+            createBulletFromPlayer()
+        }
     }
 
     private fun spawnEnemy() {
@@ -114,7 +130,7 @@ class GameEngine(
         wave++
         level = (wave / 3) + 1
         waveEnemyCount = 5 + (wave * 2)
-        createParticles(screenWidth / 2f, screenHeight / 2f, 50, "#00ff00")
+        createParticles(screenWidth / 2f, screenHeight / 2f, 50f, "#00ff00")
     }
 
     private fun applyPowerUp(powerUp: PowerUp) {
@@ -134,8 +150,8 @@ class GameEngine(
                 player.slowTime = 200
             }
         }
-        vibrate(50)
-        createParticles(powerUp.x, powerUp.y, 30, "#ffff00")
+        vibrate(50L)
+        createParticles(powerUp.x, powerUp.y, 30f, "#ffff00")
     }
 
     fun onTouchDown(x: Float, y: Float) {
@@ -188,6 +204,7 @@ class GameEngine(
     private fun drawHUD(canvas: Canvas) {
         paint.color = Color.WHITE
         paint.textSize = 40f
+        paint.textAlign = Paint.Align.LEFT
         canvas.drawText("SCORE: $score", 20f, 60f, paint)
         canvas.drawText("LEVEL: $level", 20f, 120f, paint)
         canvas.drawText("WAVE: $wave", 20f, 180f, paint)
@@ -195,10 +212,11 @@ class GameEngine(
         // Afficher les vies
         var healthText = "VIES: "
         for (i in 0 until player.health) {
-            healthText += "❤ "
+            healthText += "♥ "
         }
         paint.textSize = 30f
-        canvas.drawText(healthText, screenWidth - 250f, 60f, paint)
+        paint.textAlign = Paint.Align.RIGHT
+        canvas.drawText(healthText, screenWidth - 20f, 60f, paint)
 
         if (gamePaused) {
             paint.color = Color.parseColor("#ff006e")
@@ -217,13 +235,25 @@ class GameEngine(
         }
     }
 
+    private fun createBulletFromPlayer() {
+        val startX = player.x + player.width / 2
+        val startY = player.y + player.height / 4
+        
+        val targetX = player.targetX
+        val targetY = player.targetY
+        
+        val angle = atan2(targetY - startY, targetX - startX)
+        bullets.add(Bullet(startX, startY, angle, screenWidth, screenHeight))
+        vibrate(30L)
+    }
+
     fun createBullet(x: Float, y: Float, targetX: Float, targetY: Float) {
         val angle = atan2(targetY - y, targetX - x)
         bullets.add(Bullet(x, y, angle, screenWidth, screenHeight))
     }
 
-    private fun createParticles(x: Float, y: Float, count: Int, color: String) {
-        repeat(count) {
+    private fun createParticles(x: Float, y: Float, count: Float, color: String) {
+        repeat(count.toInt()) {
             val angle = Random.nextFloat() * 6.28f
             val speed = Random.nextFloat() * 5f + 2f
             particles.add(Particle(
@@ -231,7 +261,7 @@ class GameEngine(
                 cos(angle) * speed,
                 sin(angle) * speed,
                 color,
-                Random.nextInt(5, 15)
+                Random.nextInt(5, 15).toFloat()
             ))
         }
     }

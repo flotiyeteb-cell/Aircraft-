@@ -3,18 +3,15 @@ package com.aircraftwar
 import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
-import android.graphics.Paint
 import android.graphics.PorterDuff
-import android.os.Vibrator
 import android.view.MotionEvent
 import android.view.SurfaceHolder
 import android.view.SurfaceView
-import kotlin.math.sqrt
 
 class GameView(context: Context) : SurfaceView(context), SurfaceHolder.Callback {
-    
+
     private var gameThread: GameThread? = null
-    private lateinit var gameEngine: GameEngine
+    private var gameEngine: GameEngine? = null
     private var isRunning = true
 
     init {
@@ -25,6 +22,7 @@ class GameView(context: Context) : SurfaceView(context), SurfaceHolder.Callback 
 
     override fun surfaceCreated(holder: SurfaceHolder) {
         gameEngine = GameEngine(width, height, context as MainActivity)
+
         gameThread = GameThread(holder, this).apply {
             start()
         }
@@ -33,6 +31,8 @@ class GameView(context: Context) : SurfaceView(context), SurfaceHolder.Callback 
     override fun surfaceChanged(holder: SurfaceHolder, format: Int, width: Int, height: Int) {}
 
     override fun surfaceDestroyed(holder: SurfaceHolder) {
+        isRunning = false
+
         var retry = true
         while (retry) {
             try {
@@ -45,17 +45,13 @@ class GameView(context: Context) : SurfaceView(context), SurfaceHolder.Callback 
     }
 
     override fun onTouchEvent(event: MotionEvent?): Boolean {
-        if (event != null) {
-            when (event.action) {
-                MotionEvent.ACTION_DOWN -> {
-                    gameEngine.onTouchDown(event.x, event.y)
-                }
-                MotionEvent.ACTION_MOVE -> {
-                    gameEngine.onTouchMove(event.x, event.y)
-                }
-                MotionEvent.ACTION_UP -> {
-                    gameEngine.onTouchUp()
-                }
+        val engine = gameEngine ?: return true
+
+        event?.let {
+            when (it.action) {
+                MotionEvent.ACTION_DOWN -> engine.onTouchDown(it.x, it.y)
+                MotionEvent.ACTION_MOVE -> engine.onTouchMove(it.x, it.y)
+                MotionEvent.ACTION_UP -> engine.onTouchUp()
             }
         }
         return true
@@ -63,19 +59,20 @@ class GameView(context: Context) : SurfaceView(context), SurfaceHolder.Callback 
 
     fun drawGame(canvas: Canvas) {
         canvas.drawColor(Color.BLACK, PorterDuff.Mode.SRC)
-        gameEngine.draw(canvas)
+
+        gameEngine?.draw(canvas)
     }
 
     fun updateGame() {
-        gameEngine.update()
+        gameEngine?.update()
     }
 
     fun pause() {
-        gameEngine.pauseGame()
+        gameEngine?.pauseGame()
     }
 
     fun resume() {
-        gameEngine.resumeGame()
+        gameEngine?.resumeGame()
     }
 
     fun cleanup() {
@@ -91,15 +88,19 @@ class GameView(context: Context) : SurfaceView(context), SurfaceHolder.Callback 
         override fun run() {
             while (isRunning) {
                 var canvas: Canvas? = null
+
                 try {
                     canvas = holder.lockCanvas()
+
                     if (canvas != null) {
                         synchronized(holder) {
                             gameView.updateGame()
                             gameView.drawGame(canvas)
                         }
                     }
-                    Thread.sleep(16) // ~60 FPS
+
+                    sleep(16) // ~60 FPS
+
                 } catch (e: Exception) {
                     e.printStackTrace()
                 } finally {

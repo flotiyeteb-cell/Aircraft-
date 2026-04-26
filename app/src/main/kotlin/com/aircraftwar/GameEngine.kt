@@ -78,7 +78,7 @@ class GameEngine(
                     enemy.takeDamage(bullet.damage)
                     bullet.destroy()
                     score += (10 * level)
-                    createParticles(bullet.x, bullet.y, 15, "#00ff00")
+                    createParticles(bullet.x, bullet.y, 15f, "#00ff00")
                 }
             }
         }
@@ -252,19 +252,20 @@ class GameEngine(
         bullets.add(Bullet(x, y, angle, screenWidth, screenHeight))
     }
 
-        private fun createParticles(x: Float, y: Float, count: Float, color: String) {
+    private fun createParticles(x: Float, y: Float, count: Float, color: String) {
         repeat(count.toInt()) {
             val angle = Random.nextFloat() * 6.28f
             val speed = Random.nextFloat() * 5f + 2f
+            val randomSize = (5 + Random.nextInt(10)).toFloat()  // ✅ FIX: Convertir en Float directement
             particles.add(Particle(
                 x, y,
                 cos(angle) * speed,
                 sin(angle) * speed,
                 color,
-                Random.nextInt(5, 15).toFloat()  // ✅ AJOUT .toFloat()
+                randomSize
             ))
         }
-        }
+    }
 
     fun addScore(amount: Int) {
         score += amount

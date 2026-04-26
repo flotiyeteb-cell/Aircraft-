@@ -14,8 +14,7 @@ class CrashHandler(private val context: Context) : Thread.UncaughtExceptionHandl
             throwable.printStackTrace(PrintWriter(sw))
             val errorLog = sw.toString()
 
-            val file = File(context.filesDir, "crash_log.txt")
-            file.appendText("\n\n=== CRASH ===\n$errorLog")
+            val file = File(context.getExternalFilesDir(null), "crash_log.txt")
 
         } catch (e: Exception) {
             e.printStackTrace()

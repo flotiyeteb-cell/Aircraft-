@@ -6,6 +6,7 @@ import android.view.WindowManager
 import androidx.appcompat.app.AppCompatActivity
 
 class MainActivity : AppCompatActivity() {
+
     private lateinit var gameView: GameView
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -18,6 +19,10 @@ class MainActivity : AppCompatActivity() {
             WindowManager.LayoutParams.FLAG_FULLSCREEN
         )
 
+        // ⚠️ TEST CRASH (à enlever après test)
+        // val test: String? = null
+        // test!!.length
+
         // Créer GameView
         gameView = GameView(this)
         setContentView(gameView)
@@ -25,16 +30,22 @@ class MainActivity : AppCompatActivity() {
 
     override fun onPause() {
         super.onPause()
-        gameView.pause()
+        if (::gameView.isInitialized) {
+            gameView.pause()
+        }
     }
 
     override fun onResume() {
         super.onResume()
-        gameView.resume()
+        if (::gameView.isInitialized) {
+            gameView.resume()
+        }
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        gameView.cleanup()
+        if (::gameView.isInitialized) {
+            gameView.cleanup()
+        }
     }
 }

@@ -15,12 +15,17 @@ class CrashHandler(private val context: Context) : Thread.UncaughtExceptionHandl
             val errorLog = sw.toString()
 
             val file = File(context.getExternalFilesDir(null), "crash_log.txt")
+            file.appendText("\n\n=== CRASH ===\n$errorLog")
 
         } catch (e: Exception) {
             e.printStackTrace()
         }
 
+        // ❌ NE PAS relancer killProcess immédiatement (cause reboot loop)
+        try {
+            Thread.sleep(1000)
+        } catch (_: Exception) {}
+
         android.os.Process.killProcess(android.os.Process.myPid())
-        System.exit(1)
     }
 }

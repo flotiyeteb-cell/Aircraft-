@@ -17,6 +17,7 @@ class Bullet(
     var speed = 10f
     var damage = 1f
     val color = Color.parseColor("#00d4ff")
+    var isDestroyed = false
     
     var vx = cos(angle) * speed
     var vy = sin(angle) * speed
@@ -27,8 +28,12 @@ class Bullet(
     }
 
     fun isAlive(): Boolean {
-        return x > -50 && x < screenWidth + 50 &&
+        return !isDestroyed && x > -50 && x < screenWidth + 50 &&
                y > -50 && y < screenHeight + 50
+    }
+
+    fun destroy() {
+        isDestroyed = true
     }
 
     fun collidesWith(x: Float, y: Float, radius: Float): Boolean {
